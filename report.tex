@@ -1,0 +1,529 @@
+\documentclass[hyperref, fntef, fancyhdr,zihao = -4,UTF8]{ctexart}
+\usepackage{iftex, fancyvrb, hologo}
+\usepackage{geometry}
+\usepackage{bm,color}
+\usepackage{amsmath,amssymb,esint}
+\usepackage{textcomp}
+\usepackage{graphicx} 
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{makecell}
+\usepackage{bbm}
+\usepackage{enumerate}
+\usepackage{braket}
+\usepackage{array}
+\usepackage{subfigure}
+\usepackage{physics}
+\usepackage{gensymb}
+\usepackage{listings}
+\usepackage{cite}
+\usepackage[bookmarks=ture]{hyperref}
+\thispagestyle{empty}
+\renewcommand\thesection{\arabic{section}}
+\lstset{
+    basicstyle          =   \sffamily,          
+    keywordstyle        =   \bfseries,          
+    commentstyle        =   \rmfamily\itshape,  
+    stringstyle         =   \ttfamily,  
+    flexiblecolumns,                
+    numbers             =   left,   
+    showspaces          =   false,  
+    numberstyle         =   \zihao{-5}\ttfamily,    
+    showstringspaces    =   false,
+    captionpos          =   t,      
+    frame               =   lrtb,   
+}
+
+\lstdefinestyle{Python}{
+    language        =   Python, % 语言选Python
+    basicstyle      =   \zihao{-5}\ttfamily,
+    numberstyle     =   \zihao{-5}\ttfamily,
+    keywordstyle    =   \color{blue},
+    stringstyle     =   \color{magenta},
+    commentstyle    =   \color{red}\ttfamily,
+    breaklines      =   true,   
+    columns         =   fixed, 
+    basewidth       =   0.5em,
+}
+
+\begin{document}
+
+\begingroup  
+    \centering
+    \LARGE 科研轮转第二轮汇报\\
+    \large \today\\[0.5em]
+    肖天尧、吴天昊\par
+    指导教师：常林\par
+\endgroup
+
+\section{课题背景}
+
+当前电子计算的硬件制程发展落后于人工智能算力需求，且电子器件逐渐遭遇其物理瓶颈。
+在此背景下，光计算作为一种富有潜力的计算方式被大量研究。
+广义的光计算包括两类，一类是基于非线性光学、光电子学的狭义上的光计算，另一类是基于量子力学、量子光学的光量子计算。
+二者各有其优势和挑战，下面基于本小组轮转所得作详细汇报。
+
+\section{光计算}
+
+\subsection{概述}
+
+相比于传统电计算，光计算的优势在于高带宽、高能效、低延时、低损耗，
+而其挑战在于光电转换效率低、纯光学器件难以实现非线性函数以及其他通用计算、光器件相较电器件更难以微缩化。
+
+当前光计算主要实现的模块为矩阵乘法，另有少量工作探索了非线性函数的光学实现。
+
+根据光计算在矩阵运算全计算流程中覆盖的范围（换言之，光电转换发生的位置）可以将其大体上分为两类。
+一类是非相干光计算（incoherent optical accelerators或optical accelerators），其光电转换发生在相加（accumulate）操作之前，光计算仅完成乘法（multiplication）；
+另一类是相干光计算（coherent optical accelerators或photonics processors），其光电转换发生在相加之后，光计算既完成乘法，也完成加法。\cite{CoherentIncoherentIntegratedPhotonicNeuromorphic2024}
+
+在底层原理上可以分为三类，平面光转换法（plane light conversion，PLC）、Mach-Zehnder干涉法（MZI）和波分复用法（wavelength division multiplexing，WDM）。\cite{PhotonicMatrixMultiplication2022}
+
+\subsection{PLC}
+
+平面光转换法是基于光在自由空间传播时的传输矩阵进行的矩阵乘法运算。
+其原理图如图\ref{MPLC}。
+
+\begin{figure}[!h] %here/top/bottom/
+    \centering
+    \includegraphics[scale=0.5]{fig/MPLC.png} 
+    \caption{multiple plane light conversion \cite{PricipleOfPhotonicMatrixComputing2021}}
+    \label{MPLC}
+\end{figure}
+
+反射平面（reflective plane）仅用于改变光的传播方向，使器件更加紧凑，其反射矩阵对光的性质没有实质作用，因此可以不考虑。
+衍射平面（diffractive plane）上面有$p\cross q$个可重构像素点，每个像素点独立地作用于光束，因而衍射平面的传输矩阵$A_i$是一个$pq\cross pq$的对角矩阵。
+另外，我们还需要考虑光在自由空间中的传播矩阵$M_i\in M_{pq}(\real)$，它的维度与$A_i$相同。
+
+因而，整个系统的传输矩阵可以表示为
+$$
+T=M_{N+1}A_{N}M_{N}\dots M_2A_1M_1
+$$
+
+$M_i$是固定的，而$A_i$可以根据需要调整。
+理论上，只要有足够多的$A_i$，任意矩阵$T$都能被表示出来，但实际上，只需要很少的$A_i$就能近似表示所有的矩阵。\cite{EfficientPLC}
+
+在实际情况中，$A_i$和$M_i$都难以直接测量，通常用迭代的方法确定$A_i$的参数。
+具体而言，已知输入光场$\phi$和预期的输出光场$\psi$，可以分别正向和反向推出每一个衍射平面处，经过平面前和经过平面后的光场$\phi_i$ 和 $\psi_i$。
+则该平面的相位函数应该是$\phi$与$\psi$的相位差。
+
+重复该过程，每个平面的相位函数可以最后收敛到正确值。
+
+MPLC属于coherent optical computing（或optics computing）。
+
+\subsection{WDM}
+
+波分复用法的基础是环形谐振器（microring）。该器件只允许波长为某一基数倍数的波通过。
+
+考虑矩阵向量乘法$Y=W\vec{x}$，$W\in M_{(m\cross n)}(\real), x\in \real^n$。
+左侧$n$个环形谐振器将$x_i,1\le i\le n$调制到不同波段上，右侧$m\cross n$个环形谐振器对应着$W$的$m\cross n$个元素。
+
+左侧调制完成后，将相同的波送入右侧的m行，对应着$\vec{x}$与W行向量的内积。
+由于环形谐振器只允许特定波长的光通过，而$x_i$又被调制到不同频段上，因此每个环形谐振器只放大一个波长的信号，放大倍数可调节。
+$n$个频段的信号分别通过环形谐振器后，测量其能量即可得到内积结果。
+
+\begin{figure}[!h] %here/top/bottom/
+    \centering
+    \includegraphics[scale=0.5]{fig/WDM.png} 
+    \caption{wavelength division multiplexing \cite{PricipleOfPhotonicMatrixComputing2021}}
+    \label{WDM}
+\end{figure}
+
+仅有以上方法是不够的，因为能量总是非负的，无法实现整个实数域上的矩阵运算。
+为了解决这个问题，可以采用add-drop结构，将没有被环形谐振器接纳的通道利用起来（图\ref{WDM}中每一行的靠下的线路），
+将靠上的端口（through port）和靠下的端口（drop port）的能量差作为结果。
+
+具体而言，假设环形谐振器阵列的传输系数为$m_{ij}$，那么
+$y^{through}_i = \sum_{j=1}^{M} m_{ij}x_{j}$，
+$y^{drop}_i = \sum_{j=1}^{M} x_j - y^{through}_i$
+所得结果为
+$$
+y^{res}_i = y^{drop}_i-y^{through}_i\\
+=\sum_{j=1}^{M} (1-2m_{ij}) x_{j}
+$$
+从而等价地，
+$$
+m'_{ij}=1-2m_{ij}
+$$
+实现了全实数域上的矩阵乘法。
+
+相比于平面光转化法（MPLC），波分复用法（WDM）采用更加利于集成的环形谐振器，
+缩小了器件面积。
+
+在经过环形谐振器阵列后，光学信号仅仅在不同频段上被调制了（multiplexed），并没有被相加（accumulated），
+相加在电子域中完成，因此WDM属于incoherent optical computing。
+
+\subsection{MZI}
+
+MZI的核心是图\ref{MZI}(a)中的干涉器。其传输矩阵可表示为
+$$
+U_n=1/2 \left[\begin{matrix}
+    e^{i\alpha_n}(e^{i\theta_n}-1) & ie^{i\alpha_n}(e^{i\theta_n}+1)\\
+    ie^{i\beta_n}(e^{i\theta_n}+1) & e^{i\beta_n}(1-e^{i\theta_n}) \\
+\end{matrix}\right]\in SU(2)
+$$
+
+其中$\alpha_n,\beta_n,\gamma_n$是相移参数，可以调控。
+
+\begin{figure}[!h] %here/top/bottom/
+    \centering
+    \includegraphics[scale=0.5]{fig/MZI.png} 
+    \caption{Mach-Zehnder Interferencer \cite{PricipleOfPhotonicMatrixComputing2021}}
+    \label{MZI}
+\end{figure}
+
+令
+$$
+T^{N}_{i,k} = diag\{ I_i, U_k, I_{N-i-2} \} \in SU(N)
+$$
+
+可以发现，$T^{N}_{i,k}$仅对第i行（列）和第i+1行（列）作线性变换。
+因此，任意一个酉矩阵都可以通过N(N-1)/2次线性变换变为单位阵，即，
+任意一个酉矩阵$U\in M_N(\real)$可以被分解为至多$\frac{N(N-1)}{2}$个$U_n$的乘积。
+
+对于任意一个矩阵，利用奇异值分解，$M=U\Sigma V^{\dagger}$，其中U,V均为酉矩阵，
+而$\Sigma$元素对角排列（自身是对角阵或其中包含对角阵），容易通过一排干涉仪实现。
+
+MZI属于coherent optical computing（或optics computing）。
+
+% \begin{figure}[!h] %here/top/bottom/
+%     \centering
+%     \subfigure[]{
+%         \includegraphics[scale=0.4]{fig/fig3-1.png} \label{dim=1024}
+%     }
+%     \quad
+%     \subfigure[]{
+%         \includegraphics[scale=0.4]{fig/fig3-2.png} \label{dim=4096} 
+%     }
+%     \caption{准确率与retraining}
+% \end{figure}
+\section{光量子计算}
+
+\subsection{概述}
+
+相比于经典光计算，光量子计算立足于量子力学原理， 利用光子的叠加态、纠缠态和不可克隆性等基本性质，使其具备处理经典计算难以胜任的问题的能力。其核心优势不在于硬件速度或能效，而在于实现了本质上不同于经典计算模型的量子计算能力。
+
+量子计算以量子比特（qubit）为基本信息单元，能够在同一时间内处于多个态的叠加中，并通过纠缠建立非经典的关联关系，从而在因式分解、量子模拟、搜索优化等特定任务上展现出对经典计算机的指数加速潜力。
+
+而光量子计算就是利用了光子独特的物理特性。
+
+首先，光子是天然的量子态载体。光子之间几乎不发生相互作用，因此具有极长的相干时间，不易受热噪声与环境退相干的影响。这使得光子非常适合在复杂干涉网络中保持量子信息的稳定传输。
+
+其次，光子具有多自由度编码能力。例如，单光子的偏振、路径、时间等多个自由度均可用于构造量子比特，甚至实现一个光子携带多个比特（qudit）信息。
+
+第三，光平台具备良好的通信与集成特性。光子传播速度快，适合构建大规模、低延迟的量子网络；同时，硅光子等成熟的光学集成技术为构建片上量子处理器打下了基础，使得光量子计算有望实现大规模可扩展部署。
+
+
+\subsection{量子光学基础}
+
+量子光学是研究电磁辐射场的量子性质及其与物质相互作用的理论框架。它融合了量子力学与电动力学，为理解和控制光子、实现量子通信与量子计算等前沿技术提供了核心支撑。在学长的指导下，先对量子光学的相关教材进行学习。本节简要介绍量子光学中最基本的概念体系。
+
+\subsubsection{光场的量子化}
+
+在经典电磁场理论中，光是一种连续波动场。但在量子力学中，光场需被视为无穷多个正交模式的集合，每个模式均可量子化为一个独立的简谐振子，其最小激发单位称为\textbf{光子（photon）}。
+
+我们从 Lagrangian 与 Hamiltonian 出发，将电磁场在腔体或自由空间中展开为模式函数的叠加。每个模式对应一个独立的量子谐振子，其哈密顿量为：
+\[
+\hat{H} = \sum_k \hbar \omega_k \left( \hat{a}_k^\dagger \hat{a}_k + \frac{1}{2} \right)
+\]
+其中 $\omega_k$ 为模式 $k$ 的频率，$\hat{a}_k^\dagger$ 和 $\hat{a}_k$ 为产生与湮灭算符，满足对易关系 $[\hat{a}_j, \hat{a}_k^\dagger] = \delta_{jk}$。\cite{scully1997quantum}
+
+单模情形下：
+\[
+\hat{H} = \hbar \omega \left( \hat{a}^\dagger \hat{a} + \frac{1}{2} \right)
+\]
+Fock 态 $|n\rangle$ 表示模式中含有 $n$ 个光子：
+\[
+|n\rangle = \frac{1}{\sqrt{n!}} (\hat{a}^\dagger)^n |0\rangle
+\]
+该正交完备基在光子探测、干涉等实验中是基本态描述。
+
+\subsubsection{2. 光场的典型量子态}
+
+\paragraph{Fock 态（数态）}
+表示光子数确定的量子态，是量子光学中最基本的构造块，适用于描述单光子源、量子干涉和离散变量编码。
+
+\paragraph{相干态（Coherent State）}
+定义为湮灭算符的本征态 $\hat{a} |\alpha\rangle = \alpha |\alpha\rangle$，其中 $\alpha$ 为复数振幅。其光子数分布服从泊松分布：
+\[
+P_n = e^{-\bar{n}} \frac{\bar{n}^n}{n!}, \quad \bar{n} = |\alpha|^2
+\]
+在经典极限下，$\alpha \to \infty$ 时趋近于经典电磁场。激光即为高度相干光源。
+
+\paragraph{压缩态（Squeezed State）}
+由非线性过程）生成，对某一正交象限涨落低于真空涨落。压缩态可提高干涉仪测量精度，是量子精密测量（如引力波探测）中的关键资源。
+
+\paragraph{热态（Thermal State）}
+表现为具有玻尔兹曼分布的混合态，出现在黑体辐射、热噪声背景下，光子数期望为：
+\[
+\bar{n} = \frac{1}{e^{\hbar \omega / k_B T} - 1}
+\]
+
+\subsubsection{多模光场与正交模式结构}
+
+电磁场具有多自由度结构，可在空间、频率、极化、时间等维度定义正交模式。我们可将总场视为模式叠加：
+\[
+\hat{E}(\vec{r}, t) = \sum_k \mathcal{E}_k(\vec{r}, t) \hat{a}_k + \text{H.c.}
+\]
+其中 $\mathcal{E}_k$ 是第 $k$ 模的模式函数，$\hat{a}_k$ 是其湮灭算符。\cite{arrazola2021quantum}
+
+每个模式满足：
+\[
+[\hat{a}_j, \hat{a}_k^\dagger] = \delta_{jk}, \quad [\hat{a}_j, \hat{a}_k] = 0
+\]
+
+不同模式可以用于构造高维 Hilbert 空间，例如：
+\begin{itemize}
+  \item \textbf{路径模式}：空间上不同光纤通道或自由光束
+  \item \textbf{偏振模式}：水平 / 垂直、左右圆偏振等
+  \item \textbf{频率模式}：多个频率分量叠加构成超光谱编码
+  \item \textbf{时间模式}：不同时间窗或时分复用光脉冲
+\end{itemize}
+
+这些模式在量子通信（如时分编码、色散管理）、量子计算（如 cluster state 构造）中都扮演着重要角色。
+
+
+
+
+\subsection{光量子计算实现路径}
+通过第二轮科研轮转，了解光量子计算的一种基本实现方式：KLM线性光学实现方案。
+
+\subsubsection{Bosonic Qubit 编码方式}
+
+KLM 线性光学方案中采用光子作为量子比特的物理载体，并以其在不同光学模式中的分布状态进行编码。这类编码方式被称为 \textbf{bosonic qubit}，其核心优势在于利用光子的玻色子性质，结合线性光学器件实现量子态操控与计算。
+
+\paragraph{KLM 方案采用 \textbf{双轨编码} 实现 qubit ，具体如下：}
+\[
+|0\rangle_L = |1\rangle_a |0\rangle_b,\quad |1\rangle_L = |0\rangle_a |1\rangle_b
+\]
+其中，$a$ 和 $b$ 是两个独立的光学模式（可为空间路径、偏振通道、时间窗口等），$|n\rangle$ 表示模式中包含 $n$ 个光子。$|0\rangle_L$和$|1\rangle_L$分别表示光子在模式 a 上而 b 空和光子在模式 b 上而 a 空，二者正交。任意 bosonic qubit 的状态可写作：
+\[
+|\psi\rangle_L = \alpha |1\rangle_a |0\rangle_b + \beta |0\rangle_a |1\rangle_b,\quad  |\alpha|^2 + |\beta|^2 = 1
+\]
+
+\subsubsection{基本光学元件实现单比特操作}
+
+我们发现可以利用光学系统中成熟的线性元件对 qubit 进行态演化，实现单比特操作，常见构件包括以下几类：
+
+\begin{itemize}
+  \item \textbf{分束器}：分束器通过对两个模式进行耦合干涉，从而实现单比特旋转：
+  \[
+  \hat{U}_{\text{BS}}:
+  \begin{bmatrix}
+  \hat{a}_{\text{out}} \\
+  \hat{b}_{\text{out}}
+  \end{bmatrix}
+  =
+  \begin{bmatrix}
+  \cos \theta & i \sin \theta \\
+  i \sin \theta & \cos \theta
+  \end{bmatrix}
+  \begin{bmatrix}
+  \hat{a}_{\text{in}} \\
+  \hat{b}_{\text{in}}
+  \end{bmatrix}
+  \]
+  
+  \item \textbf{相位器}：向某一模式加入确定性相位，等价于在逻辑 qubit 空间中执行 $R_z(\phi)$ 变换。通过调整器件长度、电光调制等手段精确控制。
+
+  \item \textbf{光子探测器}：用于测量某模式中是否存在光子，实质上进行投影测量。KLM 架构中广泛利用测量反馈与“后选择（post-selection）”策略实现条件性量子门操作。
+\end{itemize}
+
+\subsubsection{多比特门实现}
+
+通过以上元件组合，可实现所有单比特量子门操作。但是在构建通用量子计算平台时，需满足以下两个基本要求：
+\begin{enumerate}
+  \item 实现任意单比特旋转；
+  \item 至少实现一个非平凡的两比特门（如 CNOT 或 CZ）。
+\end{enumerate}
+
+而线性光学元件虽可实现所有单比特操作，但由于光子之间不产生相互作用，线性系统无法直接实现二比特门所需的受控相互作用。为了解决这一问题KLM提出了一种方案，其核心思想是测量诱导非线性（Measurement-induced Nonlinearity）
+
+在此我们以CZ门的实现过程为例，来显示如何实现任意二比特门。
+
+\textbf{Step 1：非线性符号翻转门}
+
+首先构造一个仅对光子数为 2 的 Fock 态施加相位的操作：
+
+\[
+\text{NS: } a_0|0\rangle + a_1|1\rangle + a_2|2\rangle \longrightarrow a_0|0\rangle + a_1|1\rangle - a_2|2\rangle
+\]\cite{obrienPhotonicQuantumTechnologies2009}
+
+在经典线性光学中，分束器、相位器等线性器件对不同光子数的作用是线性的，它们不能区分或选择性改变某一个光子数态。
+
+KLM 提出了一种规避非线性材料的策略：通过辅助光子（ancilla photons）、干涉网络和测量反馈，构造一种“测量后选择”机制。其思路如下：
+
+
+我们考虑一个三模系统，模式分别为：
+
+- 模式 1：主输入模式，输入态为 $|\psi\rangle = a_0|0\rangle + a_1|1\rangle + a_2|2\rangle$
+
+
+- 模式 2：注入一个辅助光子，初始为 $|1\rangle$
+
+
+- 模式 3：真空辅助态，初始为 $|0\rangle$
+
+因此，三模系统的初始总态为：
+\[
+|\Psi_{\text{in}}\rangle = (a_0|0\rangle + a_1|1\rangle + a_2|2\rangle)_1 \otimes |1\rangle_2 \otimes |0\rangle_3
+\]
+
+我们接下来作用一个三模线性干涉网络 $U$，由一系列分束器和相位器构成。该网络在可用一个幺正变换 $U$ 表示，它对三个模式的产生算符 $\hat{a}_j^\dagger$ 进行如下变换：
+
+\[
+\hat{a}_j^\dagger \rightarrow \sum_{k} U_{jk} \hat{a}_k^\dagger
+\]
+
+例如，设该网络对应如下 3×3 幺正矩阵（取近似结构）：
+\[
+U = 
+\begin{bmatrix}
+u_{11} & u_{12} & u_{13} \\
+u_{21} & u_{22} & u_{23} \\
+u_{31} & u_{32} & u_{33}
+\end{bmatrix}
+\]
+
+对于初始状态 $|2\rangle_1 |1\rangle_2 |0\rangle_3$，我们将产生算符展开如下：
+\[
+|2\rangle_1 |1\rangle_2 |0\rangle_3 = \frac{1}{\sqrt{2}} (\hat{a}_1^\dagger)^2 \hat{a}_2^\dagger |0,0,0\rangle
+\]
+
+作用变换后变为：
+\[
+\frac{1}{\sqrt{2}} \left( \sum_{j} U_{1j} \hat{a}_j^\dagger \right)^2 \cdot \left( \sum_{k} U_{2k} \hat{a}_k^\dagger \right) |0\rangle
+\]
+
+此时系统中包含 3 个光子，落在三个模式中的各种分布组合将形成若干干涉路径。
+
+我们对输出模式 2 和 3 做测量，投影到：
+\[
+\langle 1|_2 \langle 0|_3 = \langle 1_2, 0_3|
+\]
+
+剩下模式 1 中的输出态（保留到总光子数为 2 的项）成为：
+\[
+|\psi_{\text{out}}\rangle \propto \langle 1_2, 0_3| U |\Psi_{\text{in}}\rangle
+\]
+
+我们可以对每一项展开计算（例如 $|2\rangle_1$ 项贡献的振幅），最终发现对 $|2\rangle$ 分量，它经过干涉后变成了负号，而 $|0\rangle$ 和 $|1\rangle$ 项保持正号。
+
+因此：
+\[
+a_0|0\rangle + a_1|1\rangle - a_2|2\rangle
+\]
+
+这个“$|2\rangle$ 项加负号”的结果就是来自不同路径振幅叠加的相消干涉，由测量反馈机制保留下来，构成了 NS 门的核心机制。
+
+
+\vspace{0.5em}
+
+\textbf{Step 2：构造 CZ 门}
+
+通过组合两个 NS 门，并构造适当的干涉路径（例如使用对称分束器），可对双轨编码下的 $\ket{11}$ 态施加 $-1$ 相位，而对 $\ket{00}, \ket{01}, \ket{10}$ 无影响，从而实现条件相位翻转门（CZ）：
+
+\[
+\text{CZ: } \ket{ab} \longrightarrow (-1)^{ab} \ket{ab}
+\]\cite{knill2001klm}
+
+该操作的成功概率为 $1/16$。我们可通过量子传态等方法进一步提升成功率。
+
+\vspace{0.5em}
+
+\textbf{Step 3：量子隐形传态提升成功率}
+
+在 KLM 架构中，为了提升非确定性量子门的成功概率，采用了量子隐形传态结合辅助态制备的方法。\cite{knill2001klm}
+
+标准的隐形传态协议传送一个 qubit 的状态 $|\psi\rangle = \alpha |0\rangle + \beta |1\rangle$ 到另一个模式，过程如下：
+
+
+1. 准备一个共享的贝尔态辅助态：
+\[
+|t_1\rangle_{23} = \frac{1}{\sqrt{2}} (|01\rangle + |10\rangle)_{23}
+\]
+
+2. 将要传送的 qubit（模式 1）与 $|t_1\rangle$ 的模式 2 在贝尔基下测量（BM）：
+
+- 成功测量概率为 1/2；
+
+- 若测量结果是奇数光子（parity = odd），则输出态在模式 3 与原始 $|\psi\rangle$ 等价
+
+因此，单次传态成功概率为：
+\[
+P_{\text{teleport}} = \frac{1}{2}
+\]
+
+
+ 3. 传态后的门注入：将逻辑门“写”入辅助态
+
+原始想法：直接对两个 qubit 作用 CZ，成功率仅为 $1/16$；
+
+改进方案：将 CZ 门作用在两个 entangled qubit（辅助态）上，然后对两个逻辑 qubit 分别做隐形传态；
+
+
+每次传态成功概率为 $1/2$，两次独立传态：
+
+\[
+P_{\text{CZ by teleport}} = \left( \frac{1}{2} \right)^2 = \frac{1}{4}
+\]
+
+整体成功率提升了 4 倍。
+
+ 4. 进一步提升：使用多模纠缠辅助态 $|t_n\rangle$
+
+定义如下的 $2n$ 模纠缠辅助态：
+
+\[
+|t_n\rangle = \frac{1}{\sqrt{n+1}} \sum_{k=0}^{n} |1_k\rangle |0_{\text{rest}}\rangle
+\]
+
+此状态可用于实现多端口贝尔测量（$BM_n$）：
+
+- 使用 $n+1$ 模的离散傅里叶变换；
+
+- 测量光子数；
+
+- 只要测得光子总数 $k \in (1, n)$，传态成功；
+
+- 失败概率仅为 $1/(n+1)$；
+
+- 成功概率为：
+
+\[
+P_n = \frac{n^2}{(n+1)^2}
+\]
+
+随着 $n \rightarrow \infty$，$P_n \rightarrow 1$，即传态趋近确定性。
+
+
+ 5. 应用于 CZ 门
+
+若使用两个 $|t_n\rangle$ 作为传态媒介：
+
+每次传态成功率为 $\frac{n}{n+1}$；
+
+总成功率为：
+
+\[
+P_{\text{CZ}, n} = \left( \frac{n}{n+1} \right)^2 = \frac{n^2}{(n+1)^2}
+\]
+
+随着 $n$ 增大，逼近确定性。
+
+\section{说明}
+
+在第二轮轮转中，我们主要进行了知识学习和文献阅读，暂未进行“实操”工作，主要有如下两个原因：
+\begin{enumerate}
+    \item 第二轮轮转时间较短（尽管在五一假期间就已经联系导师），下半学期的大作业、北自然\&本研项目申请、期末复习大量挤占了能投入轮转的时间和精力。
+    \item 该课题需要光电子学和量子光学作为前置知识，而我们没有学过这两门课，需要先快速自学，也耗费了很大的精力。
+\end{enumerate}
+
+基于此，我们建议在今年课程结束之后，所有同学对轮转过的组写一个简单的说明（类似树洞里的课程测评），主要说一下课题需要的前置知识，方便之后的同学更好的选择。
+当然，我们认为没有进行“实操”也不一定是坏事，这是由课题性质决定的，一些课题偏向实验，一些课题偏向理论。
+
+\newpage
+
+\bibliographystyle{unsrt}
+\bibliography{reference.bib}
+
+\end{document}
